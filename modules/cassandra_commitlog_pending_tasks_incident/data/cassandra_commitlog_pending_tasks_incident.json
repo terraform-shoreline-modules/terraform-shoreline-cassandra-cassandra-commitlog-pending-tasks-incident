@@ -1,0 +1,198 @@
+{
+  "name": "cassandra_commitlog_pending_tasks_incident",
+  "description": "The Cassandra Commitlog Pending Tasks incident type refers to an issue with pending tasks in the commitlog for a Cassandra database instance. This can potentially cause data loss and other performance issues if not resolved promptly. The incident is typically triggered by monitoring tools that detect high levels of pending tasks in the commitlog. It requires immediate attention and action from the responsible team to investigate and resolve the underlying issue.",
+  "params": [
+    {
+      "name": "NEW_COMMITLOG_SIZE",
+      "value": ""
+    },
+    {
+      "name": "TABLE",
+      "value": ""
+    },
+    {
+      "name": "CASSANDRA_PORT",
+      "value": ""
+    },
+    {
+      "name": "KEYSPACE",
+      "value": ""
+    },
+    {
+      "name": "COMMITLOG_DIRECTORY",
+      "value": ""
+    },
+    {
+      "name": "INSTANCE_NAME",
+      "value": ""
+    },
+    {
+      "name": "CASSANDRA_HOST",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Cassandra Commitlog Pending Tasks Incident\nThe Cassandra Commitlog Pending Tasks incident type refers to an issue with pending tasks in the commitlog for a Cassandra database instance. This can potentially cause data loss and other performance issues if not resolved promptly. The incident is typically triggered by monitoring tools that detect high levels of pending tasks in the commitlog. It requires immediate attention and action from the responsible team to investigate and resolve the underlying issue."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## 1. Check the status of the Cassandra service"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl status cassandra`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## 2. Check the Cassandra logs for any errors or warnings"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `tail -n 100 /var/log/cassandra/system.log`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## 3. Check the commitlog directory for any pending tasks"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `ls -l /var/lib/cassandra/commitlog | grep -i \"pending_tasks\"`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## 4. Check the Cassandra metrics for commitlog-related values"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_commitlog_stats($TABLE, $KEYSPACE)"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## 5. Check the disk usage and availability on the Cassandra nodes"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `df -h`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Misconfiguration of the Cassandra database settings or cluster topology, causing issues with commitlog processing and pending tasks accumulation."
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_cassandra_monitor($CASSANDRA_PORT, $CASSANDRA_HOST)"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Set variables"
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_rename_script($NEW_COMMITLOG_SIZE, $COMMITLOG_DIRECTORY, $INSTANCE_NAME)"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Stop Cassandra service"
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo service cassandra stop`"
+    },
+    {
+      "name": "cell_18",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Increase commitlog disk space"
+    },
+    {
+      "name": "cell_19",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo truncate -s ${COMMITLOG_SIZE} ${COMMITLOG_DIR}/CommitLog-*`"
+    },
+    {
+      "name": "cell_20",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Start Cassandra service"
+    },
+    {
+      "name": "cell_21",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo service cassandra start`"
+    },
+    {
+      "name": "cell_22",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Next Step"
+    },
+    {
+      "name": "cell_23",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `echo \"Commitlog disk space increased to ${COMMITLOG_SIZE} for instance ${INSTANCE}.\"`"
+    },
+    {
+      "name": "cell_24",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Restart the Cassandra instance to clear out the pending tasks and allow for a fresh start. This can be a quick fix but should not be relied upon as a long-term solution."
+    },
+    {
+      "name": "cell_25",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_stop_clear_start_cassandra($COMMITLOG_DIRECTORY)"
+    }
+  ]
+}
